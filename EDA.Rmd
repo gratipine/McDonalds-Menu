@@ -1,0 +1,38 @@
+#Exploratory Analysis of McDonalds Menu
+##Galina Endarova
+
+##Overview
+##Analysis
+
+```{r echo=FALSE}
+#reading in the data
+menu<-read.csv("Data/menu.csv", stringsAsFactors = FALSE )
+str(menu)
+menu$Item[which(menu$Calories==max(menu$Calories))]
+DT::datatable(menu)
+corrData<-menu[,-c(1,2,3,5,7,9,12,14,16,18)]
+corrplot::corrplot(cor(corrData), method = "number")
+sapply(corrData, class)
+names(corrData)
+```
+From the Correlations plot (Appendix) we can see that there is a strong relationship between calories and each of the macro groups - Fat, Protein and Carbohydrates. That makes sense - those calories have to come from somewhere. 
+
+Cholesterol and Calories are positively correlated. So are Calories and Sodium and Cholesterol and Sodium.
+
+###Ratio
+We are probably not going to find the perfect meal in McDonalds. However, it is worth exploring whether a decent Carbs-Protein-Fat ratio can be found in a single item on the menu. 
+
+```{r}
+menu$totalGrams<-menu$Total.Fat + menu$Protein + menu$Carbohydrates
+menu$CarbsRatio<-menu$Carbohydrates/menu$totalGrams
+menu$FatRatio<-menu$Total.Fat/menu$totalGrams
+nrow(menu[menu$CarbsRatio<0.6 & menu$CarbsRatio>0.4 
+          & menu$FatRatio<0.25 & menu$FatRatio>0.15,])
+
+```
+
+###The biggest health risks 
+
+```{r}
+menu$Item[which(menu$Calories==max(menu$Calories))]
+```
