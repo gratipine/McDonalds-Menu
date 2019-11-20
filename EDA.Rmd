@@ -6,33 +6,91 @@
 
 ```{r echo=FALSE}
 #reading in the data
-menu<-read.csv("Data/menu.csv", stringsAsFactors = FALSE )
-str(menu)
-menu$Item[which(menu$Calories==max(menu$Calories))]
+library(data.table)
+menu <- data.table(read.csv("Data/menu.csv", stringsAsFactors = FALSE))
 DT::datatable(menu)
-corrData<-menu[,-c(1,2,3,5,7,9,12,14,16,18)]
+corrData <- menu[,-c(1,2,3,5,7,9,12,14,16,18)]
 corrplot::corrplot(cor(corrData), method = "number")
-sapply(corrData, class)
-names(corrData)
 ```
-From the Correlations plot (Appendix) we can see that there is a strong relationship between calories and each of the macro groups - Fat, Protein and Carbohydrates. That makes sense - those calories have to come from somewhere. 
+From the Correlations plot (Appendix) we can see that there is a strong 
+relationship between calories and each of the macro groups - Fat, Protein and
+Carbohydrates. That makes sense - those calories have to come from somewhere. 
 
-Cholesterol and Calories are positively correlated. So are Calories and Sodium and Cholesterol and Sodium.
+Cholesterol and Calories are positively correlated. So are Calories and 
+Sodium and Cholesterol and Sodium.
 
 ###Ratio
-We are probably not going to find the perfect meal in McDonalds. However, it is worth exploring whether a decent Carbs-Protein-Fat ratio can be found in a single item on the menu. 
+We are probably not going to find the perfect meal in McDonalds. However, 
+it is worth exploring whether a decent Carbs-Protein-Fat ratio can be found 
+in a single item on the menu. 
 
 ```{r}
-menu$totalGrams<-menu$Total.Fat + menu$Protein + menu$Carbohydrates
-menu$CarbsRatio<-menu$Carbohydrates/menu$totalGrams
-menu$FatRatio<-menu$Total.Fat/menu$totalGrams
-nrow(menu[menu$CarbsRatio<0.6 & menu$CarbsRatio>0.4 
-          & menu$FatRatio<0.25 & menu$FatRatio>0.15,])
+menu[, totalGrams := Total.Fat + menu$Protein + Carbohydrates]
+menu[, CarbsRatio := Carbohydrates / totalGrams]
+menu[, FatRatio := Total.Fat / totalGrams]
+nrow(menu[CarbsRatio < 0.6 & CarbsRatio > 0.4 & FatRatio < 0.25
+          & FatRatio > 0.15, ])
 
 ```
 
 ###The biggest health risks 
+The biggest health risks are probably the items with the most 
+calories and where most calories come from either fat or carbs?
+Not entirely sure about this one -> fat can be very satiating. However,
+if you get a calorie bomb loaded with carbs, you could be crashing two hours 
+later.
+```{r}
+menu[Calories == max(Calories)]
+```
+
+What are the biggest calorie bombs in general? Probably people don't eat
+40 nuggets on their own?
 
 ```{r}
-menu$Item[which(menu$Calories==max(menu$Calories))]
+setorder(menu, Calories)
+
 ```
+
+```{r}
+tail(menu)
+```
+
+Well, they were not kidding about the highest amount of calories. Close to 1900 does not sound alright as a single serving. A surpise for me here was that the next 4 biggest calorie bombs were different breakfasts. My experience with McDonalds breakfast is a bagel or an English muffin.
+
+
+Plot sugar against fiber
+Sugars go all the way to up to 128 grams, while Fiber is all the way down at 
+6 or less grams. I need to have a look at what the difference is between 
+Fiber and Fiber daily value. 
+
+```{r}
+
+library(ggplot2)
+ggplot(menu, aes(x = Sugars, y = Dietary.Fiber)) +
+  geom_point()
+
+
+plot(menu$Sugars, menu$Dietary.Fiber)
+```
+
+It would be interesting to create a boxplot of calories, fiber and so on per category. Or just in general.
+
+Histogram of calories per category, with the colors by category
+```{r}
+ggplot(menu, aes(x = Calories, fill = Category)) +
+  geom_histogram()
+```
+
+```{r}
+ggplot(menu, aes(x = Category, y = Calories)) +
+  geom_boxplot()
+```
+
+
+```{r}
+ggplot(menu, aes(x = Category, y = Sugars)) +
+  geom_boxplot()
+```
+
+Plot the proportion of sugars as part of the daily recommended intake as a 
+boxplot again.
