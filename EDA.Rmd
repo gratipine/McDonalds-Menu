@@ -64,13 +64,10 @@ Sugars go all the way to up to 128 grams, while Fiber is all the way down at
 Fiber and Fiber daily value. 
 
 ```{r}
-
+# TODO: need to make the points bigger
 library(ggplot2)
-ggplot(menu, aes(x = Sugars, y = Dietary.Fiber)) +
+ggplot(menu, aes(x = Sugars, y = Dietary.Fiber, col = Category)) +
   geom_point()
-
-
-plot(menu$Sugars, menu$Dietary.Fiber)
 ```
 
 It would be interesting to create a boxplot of calories, fiber and so on per category. Or just in general.
@@ -80,17 +77,69 @@ Histogram of calories per category, with the colors by category
 ggplot(menu, aes(x = Calories, fill = Category)) +
   geom_histogram()
 ```
-
+So with the exception of the chicken nuggets, it seems like the 
+shakes and smoothies are the highest offenders in terms of calories.
 ```{r}
 ggplot(menu, aes(x = Category, y = Calories)) +
   geom_boxplot()
 ```
 
-
+In terms of sugar, it is just as unsurprising that all the beverages contain
+high amounts of sugar. It is a bit telling that the mediums of all
+the beverages are higher than that of the desserts.
 ```{r}
 ggplot(menu, aes(x = Category, y = Sugars)) +
   geom_boxplot()
 ```
+Highest in fiber foods are, unsurprisingly, the salads. Abit depressing
+that when you go to McDonalds the best thing to eat are salads. It is 
+completely reasonable, I just don't like it. 
+```{r}
+ggplot(menu, aes(x = Category, y = Dietary.Fiber)) +
+  geom_boxplot()
+```
 
 Plot the proportion of sugars as part of the daily recommended intake as a 
-boxplot again.
+boxplot again. - 30g of sugar for adults
+
+Plot the proportion of sugars as daily recommended agains the proportion of 
+fiber as daily recommended. - 30g 
+
+```{r}
+menu[, DailyPropSugar := Sugars / 30]
+menu[, DailyPropFiber := Dietary.Fiber / 30]
+menu[, DailyPropCalories := Calories / 2000]
+```
+
+The smoothies and other beverages are understandable - I was prepared for 3 time the recommended daily intake. However, Jesus about the salads! 
+Why does a salad have any sugars? Unless they count fruit salads as well?
+```{r}
+ggplot(menu, aes(x = Category, y = DailyPropSugar)) +
+  geom_boxplot()
+```
+Southwest Salad has a lot of sugar - 15 grams. How come? Dressing?
+```{r}
+menu[Category == "Salads", Item]
+```
+
+Plot fiber against calories. 
+```{r}
+# TODO: make the scales the same
+ggplot(menu, aes(x = DailyPropCalories, y = DailyPropFiber)) +
+  geom_point()
+```
+
+Calculate fiber as a percentage of total grams? Or fiber to fat ratio?
+Fiber to sugar ratio?
+
+Let's check the correlations again.
+```{r}
+cor_names <- names(menu)[
+  !(grepl("Daily", names(menu))) &
+    !(grepl("Prop", names(menu))) &
+    !(names(menu) %in% c("Category", "Item", "Serving.Size"))]
+
+corrplot::corrplot(cor(menu[,.SD, .SDcols = c(cor_names)]), method = "number")
+```
+
+Carbohydrates and sodium don't seem to go together. But Sodium and (Fat + Protein) do, as well as Sugars and Carbohydrates
