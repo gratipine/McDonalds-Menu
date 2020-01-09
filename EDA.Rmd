@@ -91,7 +91,7 @@ the beverages are higher than that of the desserts.
 ggplot(menu, aes(x = Category, y = Sugars)) +
   geom_boxplot()
 ```
-Highest in fiber foods are, unsurprisingly, the salads. Abit depressing
+Highest in fiber foods are, unsurprisingly, the salads. A bit depressing
 that when you go to McDonalds the best thing to eat are salads. It is 
 completely reasonable, I just don't like it. 
 ```{r}
@@ -99,17 +99,13 @@ ggplot(menu, aes(x = Category, y = Dietary.Fiber)) +
   geom_boxplot()
 ```
 
-Plot the proportion of sugars as part of the daily recommended intake as a 
-boxplot again. - 30g of sugar for adults
-
-Plot the proportion of sugars as daily recommended agains the proportion of 
-fiber as daily recommended. - 30g 
-
 ```{r}
 menu[, DailyPropSugar := Sugars / 30]
 menu[, DailyPropFiber := Dietary.Fiber / 30]
 menu[, DailyPropCalories := Calories / 2000]
 ```
+Plot the proportion of sugars as part of the daily recommended intake as a 
+boxplot again. - 30g of sugar for adults
 
 The smoothies and other beverages are understandable - I was prepared for 3 time the recommended daily intake. However, Jesus about the salads! 
 Why does a salad have any sugars? Unless they count fruit salads as well?
@@ -121,7 +117,8 @@ Southwest Salad has a lot of sugar - 15 grams. How come? Dressing?
 ```{r}
 menu[Category == "Salads", Item]
 ```
-
+Plot the proportion of sugars as daily recommended agains the proportion of 
+fiber as daily recommended. - 30g 
 Plot fiber against calories. 
 ```{r}
 # TODO: make the scales the same
@@ -137,9 +134,38 @@ Let's check the correlations again.
 cor_names <- names(menu)[
   !(grepl("Daily", names(menu))) &
     !(grepl("Prop", names(menu))) &
+    !(grepl("Ratio", names(menu))) &
     !(names(menu) %in% c("Category", "Item", "Serving.Size"))]
 
 corrplot::corrplot(cor(menu[,.SD, .SDcols = c(cor_names)]), method = "number")
 ```
 
-Carbohydrates and sodium don't seem to go together. But Sodium and (Fat + Protein) do, as well as Sugars and Carbohydrates
+Carbohydrates and sodium don't seem to go together. But Sodium and (Fat + Protein) do, as well as Sugars and Carbohydrates. 
+
+Given that sugars are a type of carbohydrate, that makes lots of sense.
+On the other hand, something has to give flavour to the other items, 
+and that is typically fat and salt.
+
+Assuming that salt is actually in mg. 
+
+Run the correlation again on percentage of total grams.
+```{r}
+cor_names <- names(menu)[
+  !(grepl("Daily", names(menu))) &
+    !(grepl("Prop", names(menu))) &
+    !(grepl("Ratio", names(menu))) &
+    !(names(menu) %in% c("Category", "Item", "Serving.Size", "totalGrams"))]
+
+perc_total_grams <- copy(menu[,.SD, .SDcols = c(cor_names)])
+
+out <- sapply(
+  perc_total_grams[,.SD, .SDcols = c( cor_names)],
+  FUN = function(X){
+    res <- X / menu$totalGrams
+    
+})
+
+cbind(out)
+corrplot::corrplot(cor(scaled_correlation), method = "number")
+
+```
