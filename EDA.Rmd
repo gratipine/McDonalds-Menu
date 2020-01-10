@@ -2,36 +2,45 @@
 ##Galina Endarova
 
 ##Overview
+This markdown explores a McDonalds menu, trying to find some correlations 
+between the dietary properties and see if there is a safe choice in there.
+
+##Data
+The data has been downloaded from Kaggle.
+
 ##Analysis
 
-```{r echo=FALSE}
+```{r, fig.align = 'center', fig.height = 9}
 #reading in the data
-library(data.table)
+suppressWarnings(suppressPackageStartupMessages(library(data.table)))
 menu <- data.table(read.csv("Data/menu.csv", stringsAsFactors = FALSE))
-DT::datatable(menu)
 corrData <- menu[,-c(1,2,3,5,7,9,12,14,16,18)]
 corrplot::corrplot(cor(corrData), method = "number")
 ```
+
+
 From the Correlations plot (Appendix) we can see that there is a strong 
 relationship between calories and each of the macro groups - Fat, Protein and
 Carbohydrates. That makes sense - those calories have to come from somewhere. 
 
-Cholesterol and Calories are positively correlated. So are Calories and 
-Sodium and Cholesterol and Sodium.
+Cholesterol and Calories are positively correlated. So are Calories and Sodium 
+and Cholesterol and Sodium.
 
 ###Ratio
 We are probably not going to find the perfect meal in McDonalds. However, 
 it is worth exploring whether a decent Carbs-Protein-Fat ratio can be found 
-in a single item on the menu. 
-
+in a single item on the menu.
 ```{r}
 menu[, totalGrams := Total.Fat + menu$Protein + Carbohydrates]
 menu[, CarbsRatio := Carbohydrates / totalGrams]
 menu[, FatRatio := Total.Fat / totalGrams]
-nrow(menu[CarbsRatio < 0.6 & CarbsRatio > 0.4 & FatRatio < 0.25
+slim <- nrow(menu[CarbsRatio < 0.6 & CarbsRatio > 0.4 & FatRatio < 0.25
           & FatRatio > 0.15, ])
-
 ```
+With a slim check about a balance of fat and carbs we see that 
+`r slim` / `r slim/nrow(menu)*100`% out of the items on the menu follow that 
+ratio. So not that surprising - we would expect McDonalds items to be full of
+fat and carbs (hello, french fries!).
 
 ###The biggest health risks 
 The biggest health risks are probably the items with the most 
@@ -40,46 +49,42 @@ Not entirely sure about this one -> fat can be very satiating. However,
 if you get a calorie bomb loaded with carbs, you could be crashing two hours 
 later.
 ```{r}
-menu[Calories == max(Calories)]
+cat(menu[Calories == max(Calories), Item], " have ", 
+        menu[Calories == max(Calories), Calories], " calories.")
 ```
 
-What are the biggest calorie bombs in general? Probably people don't eat
-40 nuggets on their own?
+The biggest calorie bomb is not that surprising, but perhaps most people
+do not eat 40 nuggets on their own? Sharing is caring.
 
 ```{r}
 setorder(menu, Calories)
-
+DT::datatable(tail(menu[, c("Item", "Calories")]))
 ```
 
-```{r}
-tail(menu)
-```
+Well, they were not kidding about the highest amount of calories.
+A surpise for me here was that the next 4 biggest calorie bombs were different
+breakfasts, given that what I have observed are bagels and english muffins, 
+not a hearty spread.
 
-Well, they were not kidding about the highest amount of calories. Close to 1900 does not sound alright as a single serving. A surpise for me here was that the next 4 biggest calorie bombs were different breakfasts. My experience with McDonalds breakfast is a bagel or an English muffin.
 
-
-Plot sugar against fiber
 Sugars go all the way to up to 128 grams, while Fiber is all the way down at 
 6 or less grams. I need to have a look at what the difference is between 
 Fiber and Fiber daily value. 
 
 ```{r}
 # TODO: need to make the points bigger
-library(ggplot2)
+suppressWarnings(library(ggplot2))
 ggplot(menu, aes(x = Sugars, y = Dietary.Fiber, col = Category)) +
   geom_point()
 ```
 
-It would be interesting to create a boxplot of calories, fiber and so on per category. Or just in general.
+It would be interesting to create a boxplot of calories, fiber and so on per 
+category. Or just in general.
 
-Histogram of calories per category, with the colors by category
-```{r}
-ggplot(menu, aes(x = Calories, fill = Category)) +
-  geom_histogram()
-```
 So with the exception of the chicken nuggets, it seems like the 
 shakes and smoothies are the highest offenders in terms of calories.
 ```{r}
+# TODO: enlarge the plot
 ggplot(menu, aes(x = Category, y = Calories)) +
   geom_boxplot()
 ```
@@ -91,9 +96,11 @@ the beverages are higher than that of the desserts.
 ggplot(menu, aes(x = Category, y = Sugars)) +
   geom_boxplot()
 ```
+
 Highest in fiber foods are, unsurprisingly, the salads. A bit depressing
 that when you go to McDonalds the best thing to eat are salads. It is 
-completely reasonable, I just don't like it. 
+completely reasonable, but I just don't like it. 
+
 ```{r}
 ggplot(menu, aes(x = Category, y = Dietary.Fiber)) +
   geom_boxplot()
@@ -104,6 +111,7 @@ menu[, DailyPropSugar := Sugars / 30]
 menu[, DailyPropFiber := Dietary.Fiber / 30]
 menu[, DailyPropCalories := Calories / 2000]
 ```
+
 Plot the proportion of sugars as part of the daily recommended intake as a 
 boxplot again. - 30g of sugar for adults
 
@@ -113,10 +121,12 @@ Why does a salad have any sugars? Unless they count fruit salads as well?
 ggplot(menu, aes(x = Category, y = DailyPropSugar)) +
   geom_boxplot()
 ```
+
 Southwest Salad has a lot of sugar - 15 grams. How come? Dressing?
 ```{r}
 menu[Category == "Salads", Item]
 ```
+
 Plot the proportion of sugars as daily recommended agains the proportion of 
 fiber as daily recommended. - 30g 
 Plot fiber against calories. 
@@ -140,32 +150,9 @@ cor_names <- names(menu)[
 corrplot::corrplot(cor(menu[,.SD, .SDcols = c(cor_names)]), method = "number")
 ```
 
-Carbohydrates and sodium don't seem to go together. But Sodium and (Fat + Protein) do, as well as Sugars and Carbohydrates. 
+Carbohydrates and sodium don't seem to go together. But Sodium and 
+(Fat + Protein) do, as well as Sugars and Carbohydrates. 
 
 Given that sugars are a type of carbohydrate, that makes lots of sense.
 On the other hand, something has to give flavour to the other items, 
 and that is typically fat and salt.
-
-Assuming that salt is actually in mg. 
-
-Run the correlation again on percentage of total grams.
-```{r}
-cor_names <- names(menu)[
-  !(grepl("Daily", names(menu))) &
-    !(grepl("Prop", names(menu))) &
-    !(grepl("Ratio", names(menu))) &
-    !(names(menu) %in% c("Category", "Item", "Serving.Size", "totalGrams"))]
-
-perc_total_grams <- copy(menu[,.SD, .SDcols = c(cor_names)])
-
-out <- sapply(
-  perc_total_grams[,.SD, .SDcols = c( cor_names)],
-  FUN = function(X){
-    res <- X / menu$totalGrams
-    
-})
-
-cbind(out)
-corrplot::corrplot(cor(scaled_correlation), method = "number")
-
-```
