@@ -10,8 +10,9 @@ The data has been downloaded from Kaggle.
 
 ##Analysis
 
-```{r, fig.align = 'center', fig.height = 9}
+```{r, fig.align = 'center', fig.width = 12}
 #reading in the data
+knitr::opts_chunk$set(fig.width = 11)
 suppressWarnings(suppressPackageStartupMessages(library(data.table)))
 menu <- data.table(read.csv("Data/menu.csv", stringsAsFactors = FALSE))
 corrData <- menu[,-c(1,2,3,5,7,9,12,14,16,18)]
@@ -39,7 +40,7 @@ slim <- nrow(menu[CarbsRatio < 0.6 & CarbsRatio > 0.4 & FatRatio < 0.25
 ```
 With a slim check about a balance of fat and carbs we see that 
 `r slim` / `r slim/nrow(menu)*100`% out of the items on the menu follow that 
-ratio. So not that surprising - we would expect McDonalds items to be full of
+ratio. The small number is not that surprising - we would expect McDonalds items to be full of
 fat and carbs (hello, french fries!).
 
 ###The biggest health risks 
@@ -48,12 +49,11 @@ calories and where most calories come from either fat or carbs?
 Not entirely sure about this one -> fat can be very satiating. However,
 if you get a calorie bomb loaded with carbs, you could be crashing two hours 
 later.
-```{r}
-cat(menu[Calories == max(Calories), Item], " have ", 
-        menu[Calories == max(Calories), Calories], " calories.")
-```
 
-The biggest calorie bomb is not that surprising, but perhaps most people
+
+The biggest calorie bomb is not that surprising - 
+`r menu[Calories == max(Calories), Item]` have 
+`r menu[Calories == max(Calories), Calories]` calories. Perhaps most people
 do not eat 40 nuggets on their own? Sharing is caring.
 
 ```{r}
@@ -61,15 +61,23 @@ setorder(menu, Calories)
 DT::datatable(tail(menu[, c("Item", "Calories")]))
 ```
 
-Well, they were not kidding about the highest amount of calories.
-A surpise for me here was that the next 4 biggest calorie bombs were different
-breakfasts, given that what I have observed are bagels and english muffins, 
-not a hearty spread.
+It is a biut of a comfort that the highest food by calories is far removed from 
+the rest of them. However, it is a bit surprising that the next 4 largest meals 
+are different breakfasts, given that what I have observed are bagels and 
+english muffins, not a hearty spread.
 
 
+A deeper look into the relationship between sugar and fiber is interesting. 
 Sugars go all the way to up to 128 grams, while Fiber is all the way down at 
-6 or less grams. I need to have a look at what the difference is between 
-Fiber and Fiber daily value. 
+6 or less grams. As a reminder, the 
+[sugar recommendation](https://www.nhs.uk/live-well/eat-well/how-does-sugar-in-our-diet-affect-our-health/) 
+for adults is no more than 30g daily. At the same time, the 
+[recommended fiber intake](https://www.nhs.uk/live-well/eat-well/how-to-get-more-fibre-into-your-diet/)
+is at 30g per day as well.
+And yet you would be hard pressed to obtain anything close to the daily 
+recommended value using a McDonalds diet. If we try to eat following the sugar 
+recommendation, we would be able to eat 
+`r nrow(menu[Sugars < 30]) / nrow(menu)`% of the items. So not so bad.
 
 ```{r}
 # TODO: need to make the points bigger
@@ -78,12 +86,10 @@ ggplot(menu, aes(x = Sugars, y = Dietary.Fiber, col = Category)) +
   geom_point()
 ```
 
-It would be interesting to create a boxplot of calories, fiber and so on per 
-category. Or just in general.
 
 So with the exception of the chicken nuggets, it seems like the 
-shakes and smoothies are the highest offenders in terms of calories.
-```{r}
+shakes and smoothies are the highest offenders in terms of calories and sugars.
+```{r fig.width=12}
 # TODO: enlarge the plot
 ggplot(menu, aes(x = Category, y = Calories)) +
   geom_boxplot()
@@ -98,14 +104,15 @@ ggplot(menu, aes(x = Category, y = Sugars)) +
 ```
 
 Highest in fiber foods are, unsurprisingly, the salads. A bit depressing
-that when you go to McDonalds the best thing to eat are salads. It is 
-completely reasonable, but I just don't like it. 
+that when you go to McDonalds the best thing to eat is the same thing you would 
+be eating everywhere else.
 
 ```{r}
 ggplot(menu, aes(x = Category, y = Dietary.Fiber)) +
   geom_boxplot()
 ```
 
+To drive the point home about the daily recommended values,  
 ```{r}
 menu[, DailyPropSugar := Sugars / 30]
 menu[, DailyPropFiber := Dietary.Fiber / 30]
@@ -119,7 +126,8 @@ The smoothies and other beverages are understandable - I was prepared for 3 time
 Why does a salad have any sugars? Unless they count fruit salads as well?
 ```{r}
 ggplot(menu, aes(x = Category, y = DailyPropSugar)) +
-  geom_boxplot()
+  geom_boxplot() + 
+  ggtitle("Proportion of the daily sugar limits by category")
 ```
 
 Southwest Salad has a lot of sugar - 15 grams. How come? Dressing?
@@ -127,9 +135,6 @@ Southwest Salad has a lot of sugar - 15 grams. How come? Dressing?
 menu[Category == "Salads", Item]
 ```
 
-Plot the proportion of sugars as daily recommended agains the proportion of 
-fiber as daily recommended. - 30g 
-Plot fiber against calories. 
 ```{r}
 # TODO: make the scales the same
 ggplot(menu, aes(x = DailyPropCalories, y = DailyPropFiber)) +
